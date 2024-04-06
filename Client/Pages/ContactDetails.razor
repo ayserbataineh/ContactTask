@@ -1,0 +1,103 @@
+﻿@page "/fetchuserdetails"
+@using BlazorApp.Shared.Models
+@inject HttpClient Http
+<h1>Contact Data</h1>
+<p>Blazor CRUD operation</p>
+<div class="row">
+    <div class="col-md-6">
+        <a href='/contact/add' class="btn btn-primary" role="button">
+            <i class="fas fa-user-plus"></i>
+            Add Contact
+        </a>
+    </div>
+    <div class="input-group col">
+        <input type="text" class="form-control" placeholder="Search contact by name"
+               @bind="SearchString" @bind:event="oninput" @onkeyup="FilterContact" />
+        @if (SearchString.Length > 0)
+        {
+            <div class="input-group-append">
+                <button class="btn btn-danger" @onclick="ResetSearch">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+<br />
+@if (contactList == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped align-middle table-bordered">
+        <thead class="table-success">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Department</th>
+                <th>Cell No</th>
+                <th>E-mail</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contact in contactList)
+            {
+                <tr>
+                    <td>@contact.Id</td>
+                    <td>@contact.FirstName</td>
+                    <td>@contact.LastName</td>
+                    <td>@contact.Phone</td>
+                    <td>@contact.Email</td>
+                    <td>
+                        <a href='/contact/edit/@contact.Id' class="btn btn-outline-dark" role="button">
+                            Edit
+                        </a>
+                        <a href='/contact/delete/@contact.Id' class="btn btn-outline-danger" role="button">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
+@code {
+    protected List<Contact> contactList = new();
+    protected List<Contact> searchContactData = new();
+    protected Contact contact = new();
+    protected string SearchString { get; set; } = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        await GetContact();
+    }
+    protected async Task GetContact()
+    {
+        contactList = await Http.GetFromJsonAsync<List<Contact>>("api/User");
+        searchContactData = contactList;
+    }
+    protected void FilterContact()
+    {
+        if (!string.IsNullOrEmpty(SearchString))
+        {
+            contactList = searchContactData
+                .Where(x => x.FirstName.IndexOf(SearchString, StringComparison.OrdinalIgnoreCase) != -1)
+                .ToList();
+        }
+        else
+        {
+            contactList = searchContactData;
+        }
+    }
+    protected void DeleteConfirm(int userID)
+    {
+        contact = contactList.FirstOrDefault(x => x.Id == userID);
+    }
+    public void ResetSearch()
+    {
+        SearchString = string.Empty;
+        contactList = searchContactData;
+    }
+}
